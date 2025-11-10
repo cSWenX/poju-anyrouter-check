@@ -33,13 +33,53 @@
 
 ## 部署方式
 
-### 方式 1: Render 部署 (推荐 ⭐)
+### 方式 1: Zeabur 部署 (推荐 ⭐⭐⭐ 无需信用卡)
+
+Zeabur 提供完全免费的套餐,**无需信用卡验证**,支持中文界面,国内访问快。
+
+#### 1. 准备工作
+
+- 注册 [Zeabur](https://zeabur.com/) 账号 (可用 GitHub 登录)
+- 将项目推送到 GitHub
+
+#### 2. 在 Zeabur 部署
+
+1. 访问 [Zeabur Dashboard](https://dash.zeabur.com/)
+2. 点击 "创建新项目" → "从 GitHub 导入"
+3. 选择仓库 `cSWenX/poju-anyrouter-check`
+4. Zeabur 会自动检测并部署
+
+#### 3. 配置持久化存储 (可选)
+
+1. 在服务页面,点击 "服务" → "卷"
+2. 点击 "添加卷"
+3. 挂载路径设置为 `/data`
+4. 添加环境变量: `ZEABUR_VOLUME_DIR=/data`
+
+#### 4. 访问应用
+
+部署完成后,Zeabur 会自动生成访问 URL。
+
+**优势**:
+- ✅ 完全免费,无需信用卡
+- ✅ 中文界面,操作简单
+- ✅ 国内访问速度快
+- ✅ 自动 HTTPS
+- ✅ Puppeteer 开箱即用
+
+### 方式 2: Render 部署
+
+**注意**: Render 现在需要信用卡验证,即使使用免费套餐。
+
+<details>
+<summary>点击展开 Render 部署步骤</summary>
 
 Render 提供免费套餐,支持 Web 服务和持久化存储。
 
 #### 1. 准备工作
 
 - 注册 [Render](https://render.com/) 账号
+- **需要绑定信用卡**(免费套餐不扣费)
 - 将项目推送到 GitHub
 
 #### 2. 在 Render 部署
@@ -52,7 +92,7 @@ Render 提供免费套餐,支持 Web 服务和持久化存储。
    - **Region**: Singapore (新加坡,离中国近)
    - **Branch**: main
    - **Runtime**: Node
-   - **Build Command**: `npm install`
+   - **Build Command**: `chmod +x install-chromium.sh && ./install-chromium.sh && npm install`
    - **Start Command**: `node server.js`
    - **Instance Type**: Free
 
@@ -64,7 +104,7 @@ PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ```
 
-#### 4. 配置持久化存储 (重要!)
+#### 4. 配置持久化存储
 
 1. 在服务页面,找到 "Disks" 部分
 2. 点击 "Add Disk"
@@ -73,30 +113,13 @@ PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
    - **Mount Path**: `/data`
    - **Size**: 1 GB (免费套餐)
 
-#### 5. 添加构建脚本
+</details>
 
-在 "Settings" → "Build Command" 修改为:
-```bash
-chmod +x install-chromium.sh && ./install-chromium.sh && npm install
-```
-
-#### 6. 部署
-
-点击 "Create Web Service",Render 会自动构建并部署。
-
-#### 7. 访问应用
-
-部署完成后,访问 Render 提供的 URL (如 `https://anyrouter-check.onrender.com`)。
-
-**注意**:
-- Render 免费套餐在无活动 15 分钟后会休眠,首次访问需要等待启动
-- 运行在 headless 模式,需要在本地先获取 Cookie 后使用 API 导入
-
-### 方式 2: Railway 部署
+### 方式 3: Railway 部署
 
 **注意**: Railway 免费套餐已取消,现在需要付费才能部署 Web 服务。
 
-### 方式 3: 本地部署
+### 方式 4: 本地部署
 
 #### 1. 克隆项目
 
@@ -148,7 +171,8 @@ npm start
 anyrouter-check/
 ├── server.js              # 主服务器文件
 ├── package.json           # 项目配置文件
-├── render.yaml            # Render 部署配置
+├── zbpack.json            # Zeabur 部署配置 (推荐)
+├── render.yaml            # Render 部署配置 (需信用卡)
 ├── railway.json           # Railway 部署配置 (已停止支持免费套餐)
 ├── nixpacks.toml          # Nixpacks 构建配置
 ├── install-chromium.sh    # Chromium 安装脚本 (Render 用)
@@ -182,6 +206,8 @@ anyrouter-check/
 | 变量名 | 说明 | 默认值 | 平台 |
 |--------|------|--------|------|
 | `PORT` | 服务端口 | 3010 | 所有 |
+| `ZEABUR` | Zeabur 环境标识 | - | Zeabur |
+| `ZEABUR_VOLUME_DIR` | Zeabur 持久化存储路径 | - | Zeabur |
 | `RAILWAY_ENVIRONMENT` | Railway 环境标识 | - | Railway |
 | `RAILWAY_VOLUME_MOUNT_PATH` | Railway 持久化存储路径 | - | Railway |
 | `RENDER` | Render 环境标识 | - | Render |
@@ -195,50 +221,50 @@ anyrouter-check/
 1. 本项目仅供学习交流使用
 2. 请勿用于任何非法用途
 3. **本地使用**时需要安装 Google Chrome 浏览器
-4. **Render/Railway 部署**时会自动使用 Chromium (headless 模式)
-5. macOS 本地开发时 Chrome 路径已自动配置
-6. 云部署需要配置 Disk/Volume 来持久化数据库
+4. **云部署**推荐使用 Zeabur (完全免费,无需信用卡)
+5. **Zeabur** Puppeteer 开箱即用,无需额外配置
+6. **Render** 需要信用卡验证(免费套餐不扣费)
+7. **Railway** 免费套餐已取消,需付费使用
+8. macOS 本地开发时 Chrome 路径已自动配置
+9. 云部署需要配置 Volume/Disk 来持久化数据库
 
 ## 常见问题
 
-### 1. Render 部署后数据丢失
+### 1. 推荐哪个部署平台?
 
-确保已添加 Disk 并设置 Mount Path 为 `/data`。
+**推荐 Zeabur**: 完全免费,无需信用卡,中文界面,国内访问快。
 
-### 2. Render 上 Chromium 启动失败
+### 2. Zeabur 部署后数据丢失
 
-确保在环境变量中设置了:
-- `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true`
-- `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser`
+添加持久化存储:
+1. 在服务页面,点击 "服务" → "卷"
+2. 添加卷,挂载路径 `/data`
+3. 添加环境变量 `ZEABUR_VOLUME_DIR=/data`
 
-并且 Build Command 包含 `./install-chromium.sh` 脚本。
+### 3. Render/Railway 为什么需要信用卡?
 
-### 3. Render 免费套餐休眠
+- **Render**: 即使免费套餐也需要信用卡验证(不扣费)
+- **Railway**: 已取消免费套餐,需要付费
+- **建议**: 使用 Zeabur,无需信用卡
 
-Render 免费套餐在无活动 15 分钟后会休眠,首次访问需要等待 30-60 秒启动。可以使用 UptimeRobot 等服务定期 ping 你的应用保持活跃。
-
-### 4. Railway 提示账户受限
-
-Railway 已取消免费套餐,现在需要付费才能部署 Web 服务。建议使用 Render 替代。
-
-### 5. 云部署上无法打开浏览器
+### 4. 云部署上无法打开浏览器
 
 云平台运行在 headless 模式,需要:
 - 在本地先登录一次获取 Cookie
 - 使用 API 导入 Cookie 到云实例
 
-### 6. Chrome 浏览器路径错误(本地)
+### 5. Chrome 浏览器路径错误(本地)
 
 代码已自动检测环境,本地 macOS 会使用标准路径,其他系统 Puppeteer 会使用自带的 Chromium。
 
-### 7. 端口被占用
+### 6. 端口被占用
 
 云平台会自动分配端口。本地使用时,可以设置环境变量:
 ```bash
 PORT=8080 npm start
 ```
 
-### 8. Cookie 过期
+### 7. Cookie 过期
 
 Cookie 过期后,系统会自动检测并提醒。只需:
 1. 点击"打开浏览器登录"
@@ -263,9 +289,16 @@ npm run dev
 
 ## 更新日志
 
+### v1.3.0 (2025-11-10)
+
+- ✅ 添加 Zeabur 部署支持 (推荐,无需信用卡)
+- ✅ 优化部署文档,突出 Zeabur
+- ✅ 更新环境检测支持 Zeabur
+- ✅ 说明各平台信用卡要求
+
 ### v1.2.0 (2025-11-10)
 
-- ✅ 添加 Render 部署支持 (推荐)
+- ✅ 添加 Render 部署支持
 - ✅ 创建 Chromium 安装脚本
 - ✅ 更新环境检测支持多平台
 - ✅ 优化部署文档

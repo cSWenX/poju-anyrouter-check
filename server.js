@@ -17,6 +17,8 @@ const dbPath = process.env.RAILWAY_VOLUME_MOUNT_PATH
     ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'anyrouter.db')
     : process.env.RENDER_EXTERNAL_DISK
     ? path.join(process.env.RENDER_EXTERNAL_DISK, 'anyrouter.db')
+    : process.env.ZEABUR_VOLUME_DIR
+    ? path.join(process.env.ZEABUR_VOLUME_DIR, 'anyrouter.db')
     : 'anyrouter.db';
 console.log('数据库路径:', dbPath);
 const db = new sqlite3.Database(dbPath);
@@ -288,7 +290,8 @@ class AnyRouterBot {
         // 检测运行环境
         const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
         const isRender = process.env.RENDER !== undefined;
-        const isProduction = isRailway || isRender;
+        const isZeabur = process.env.ZEABUR !== undefined;
+        const isProduction = isRailway || isRender || isZeabur;
         const isDevelopment = !isProduction;
 
         const launchOptions = {
@@ -311,6 +314,7 @@ class AnyRouterBot {
         else if (isRender && process.env.PUPPETEER_EXECUTABLE_PATH) {
             launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
         }
+        // Zeabur 使用 Puppeteer 自带的 Chromium
 
         console.log('Puppeteer 启动配置:', JSON.stringify(launchOptions, null, 2));
         this.browser = await puppeteer.launch(launchOptions);
@@ -725,6 +729,7 @@ app.post('/api/check', async (req, res) => {
                 // 创建临时 headless 浏览器实例用于调用 API
                 const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
                 const isRender = process.env.RENDER !== undefined;
+                const isZeabur = process.env.ZEABUR !== undefined;
                 const launchOptions = {
                     headless: true,  // 使用 headless 模式
                     args: [
@@ -736,7 +741,7 @@ app.post('/api/check', async (req, res) => {
                 };
 
                 // 只在本地 macOS 开发时指定 Chrome 路径
-                if (!isRailway && !isRender && process.platform === 'darwin') {
+                if (!isRailway && !isRender && !isZeabur && process.platform === 'darwin') {
                     launchOptions.executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
                 }
                 // Render 环境使用系统 Chromium
@@ -1315,6 +1320,7 @@ async function executeAutoCheck() {
                 // 创建临时 headless 浏览器实例用于调用 API
                 const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
                 const isRender = process.env.RENDER !== undefined;
+                const isZeabur = process.env.ZEABUR !== undefined;
                 const launchOptions = {
                     headless: true,
                     args: [
@@ -1326,7 +1332,7 @@ async function executeAutoCheck() {
                 };
 
                 // 只在本地 macOS 开发时指定 Chrome 路径
-                if (!isRailway && !isRender && process.platform === 'darwin') {
+                if (!isRailway && !isRender && !isZeabur && process.platform === 'darwin') {
                     launchOptions.executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
                 }
                 // Render 环境使用系统 Chromium
