@@ -31,21 +31,62 @@
 - **定时任务**: node-cron
 - **前端**: 原生 HTML/CSS/JavaScript
 
-## 安装步骤
+## 部署方式
 
-### 1. 克隆项目
+### 方式 1: Railway 部署 (推荐)
+
+#### 1. 准备工作
+
+- 注册 [Railway](https://railway.app/) 账号
+- 在 GitHub 上 fork 本项目
+
+#### 2. 在 Railway 部署
+
+1. 访问 [Railway Dashboard](https://railway.app/dashboard)
+2. 点击 "New Project" → "Deploy from GitHub repo"
+3. 选择你 fork 的仓库
+4. Railway 会自动检测并部署项目
+
+#### 3. 配置持久化存储 (重要!)
+
+为了保存数据库文件,需要添加 Volume:
+
+1. 在 Railway 项目页面,点击你的服务
+2. 进入 "Settings" → "Variables"
+3. 添加环境变量:
+   ```
+   RAILWAY_VOLUME_MOUNT_PATH=/data
+   ```
+4. 进入 "Settings" → "Volumes"
+5. 点击 "Add Volume"
+6. Mount Path 设置为 `/data`
+
+#### 4. 访问应用
+
+部署完成后:
+1. 在 Railway 项目中找到生成的 URL (如 `your-app.railway.app`)
+2. 访问该 URL 即可使用
+
+**注意**: Railway 上运行的是 headless 模式,无法打开浏览器窗口。你需要:
+- 先在本地运行一次,完成登录并生成 Cookie
+- 或者使用 API 方式直接设置 Cookie
+
+### 方式 2: 本地部署
+
+#### 1. 克隆项目
 
 ```bash
-git https://github.com/cSWenX/poju-anyrouter-check.git
+git clone https://github.com/cSWenX/poju-anyrouter-check.git
+cd poju-anyrouter-check
 ```
 
-### 2. 安装依赖
+#### 2. 安装依赖
 
 ```bash
 npm install
 ```
 
-### 3. 启动服务
+#### 3. 启动服务
 
 ```bash
 npm start
@@ -82,6 +123,8 @@ npm start
 anyrouter-check/
 ├── server.js              # 主服务器文件
 ├── package.json           # 项目配置文件
+├── railway.json           # Railway 部署配置
+├── nixpacks.toml          # Nixpacks 构建配置
 ├── anyrouter.db          # SQLite 数据库(自动生成)
 ├── public/
 │   └── index.html        # 前端管理界面
@@ -107,35 +150,49 @@ anyrouter-check/
 - `GET /api/cookies` - 查看已保存的 Cookie
 - `POST /api/clear-cookies` - 清除已保存的 Cookie
 
+## 环境变量
+
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `PORT` | 服务端口 | 3010 |
+| `RAILWAY_ENVIRONMENT` | Railway 环境标识 | - |
+| `RAILWAY_VOLUME_MOUNT_PATH` | 持久化存储路径 | - |
+
 ## 注意事项
 
 ⚠️ **重要提示**:
 
 1. 本项目仅供学习交流使用
 2. 请勿用于任何非法用途
-3. 使用前请确保已安装 Google Chrome 浏览器
-4. macOS 用户需要确认 Chrome 安装路径为 `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`
-5. 其他系统用户需要修改 `server.js` 中的 `executablePath` 配置
+3. **本地使用**时需要安装 Google Chrome 浏览器
+4. **Railway 部署**时会自动使用 Chromium (headless 模式)
+5. macOS 本地开发时 Chrome 路径已自动配置
+6. Railway 上需要配置 Volume 来持久化数据库
 
 ## 常见问题
 
-### 1. Chrome 浏览器路径错误
+### 1. Railway 部署后数据丢失
 
-如果遇到 Chrome 路径错误,请修改 `server.js` 中的 `executablePath`:
+确保已添加 Volume 并设置 `RAILWAY_VOLUME_MOUNT_PATH=/data` 环境变量。
 
-```javascript
-executablePath: '/your/chrome/path'
+### 2. Railway 上无法打开浏览器
+
+Railway 运行在 headless 模式,需要:
+- 在本地先登录一次获取 Cookie
+- 使用 API 导入 Cookie 到 Railway 实例
+
+### 3. Chrome 浏览器路径错误(本地)
+
+代码已自动检测环境,本地 macOS 会使用标准路径,其他系统 Puppeteer 会使用自带的 Chromium。
+
+### 4. 端口被占用
+
+Railway 会自动分配端口。本地使用时,可以设置环境变量:
+```bash
+PORT=8080 npm start
 ```
 
-### 2. 端口被占用
-
-如果 3010 端口被占用,可以修改 `server.js` 中的 `PORT` 常量:
-
-```javascript
-const PORT = 3010; // 修改为其他端口
-```
-
-### 3. Cookie 过期
+### 5. Cookie 过期
 
 Cookie 过期后,系统会自动检测并提醒。只需:
 1. 点击"打开浏览器登录"
@@ -154,10 +211,18 @@ npm run dev
 ### 调试模式
 
 查看浏览器调试信息:
-- 浏览器会以非 headless 模式打开
+- 本地浏览器会以非 headless 模式打开
+- Railway 上会在日志中显示详细信息
 - 可以在控制台查看详细日志
 
 ## 更新日志
+
+### v1.1.0 (2025-11-10)
+
+- ✅ 支持 Railway 部署
+- ✅ 自动检测运行环境(本地/Railway)
+- ✅ 持久化存储支持
+- ✅ 优化 Puppeteer 配置
 
 ### v1.0.0 (2025-11-10)
 

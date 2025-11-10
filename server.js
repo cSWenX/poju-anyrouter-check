@@ -6,14 +6,18 @@ const path = require('path');
 const moment = require('moment');
 
 const app = express();
-const PORT = 3010;
+const PORT = process.env.PORT || 3010;
 
 // 中间件设置
 app.use(express.json());
 app.use(express.static('public'));
 
-// 数据库初始化
-const db = new sqlite3.Database('anyrouter.db');
+// 数据库初始化 - 使用持久化存储路径
+const dbPath = process.env.RAILWAY_VOLUME_MOUNT_PATH
+    ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'anyrouter.db')
+    : 'anyrouter.db';
+console.log('数据库路径:', dbPath);
+const db = new sqlite3.Database(dbPath);
 
 // 创建表
 db.serialize(() => {
@@ -279,11 +283,29 @@ class AnyRouterBot {
     }
 
     async init() {
-        this.browser = await puppeteer.launch({
-            headless: false,
-            executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
+        // 检测运行环境
+        const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
+        const isDevelopment = !isRailway;
+
+        const launchOptions = {
+            headless: isRailway ? true : false, // Railway 上必须使用 headless
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--disable-software-rasterizer',
+                '--disable-extensions'
+            ]
+        };
+
+        // 只在本地开发时指定 Chrome 路径
+        if (isDevelopment && process.platform === 'darwin') {
+            launchOptions.executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+        }
+
+        console.log('Puppeteer 启动配置:', JSON.stringify(launchOptions, null, 2));
+        this.browser = await puppeteer.launch(launchOptions);
         this.page = await this.browser.newPage();
         await this.page.setViewport({ width: 1280, height: 720 });
     }
@@ -693,11 +715,23 @@ app.post('/api/check', async (req, res) => {
 
             try {
                 // 创建临时 headless 浏览器实例用于调用 API
-                const tempBrowser = await puppeteer.launch({
+                const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
+                const launchOptions = {
                     headless: true,  // 使用 headless 模式
-                    executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-                    args: ['--no-sandbox', '--disable-setuid-sandbox']
-                });
+                    args: [
+                        '--no-sandbox',
+                        '--disable-setuid-sandbox',
+                        '--disable-dev-shm-usage',
+                        '--disable-gpu'
+                    ]
+                };
+
+                // 只在本地 macOS 开发时指定 Chrome 路径
+                if (!isRailway && process.platform === 'darwin') {
+                    launchOptions.executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+                }
+
+                const tempBrowser = await puppeteer.launch(launchOptions);
 
                 const tempPage = await tempBrowser.newPage();
                 await tempPage.setViewport({ width: 1280, height: 720 });
@@ -1266,11 +1300,23 @@ async function executeAutoCheck() {
 
             try {
                 // 创建临时 headless 浏览器实例用于调用 API
-                const tempBrowser = await puppeteer.launch({
+                const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
+                const launchOptions = {
                     headless: true,
-                    executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-                    args: ['--no-sandbox', '--disable-setuid-sandbox']
-                });
+                    args: [
+                        '--no-sandbox',
+                        '--disable-setuid-sandbox',
+                        '--disable-dev-shm-usage',
+                        '--disable-gpu'
+                    ]
+                };
+
+                // 只在本地 macOS 开发时指定 Chrome 路径
+                if (!isRailway && process.platform === 'darwin') {
+                    launchOptions.executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+                }
+
+                const tempBrowser = await puppeteer.launch(launchOptions);
 
                 const tempPage = await tempBrowser.newPage();
                 await tempPage.setViewport({ width: 1280, height: 720 });
