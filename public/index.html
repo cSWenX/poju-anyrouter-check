@@ -619,9 +619,15 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    showMessage('Cookie 已清除');
+                    showMessage('✅ Cookie 和用户ID 已清除');
+                    // 清除前端状态
                     cookiesData = '';
+                    savedUserId = null;
                     updateCookieDisplay();
+                    updateUserIdDisplay();
+                    // 清空输入框
+                    clearImportInputs();
+                    // 检查登录状态
                     checkLoginStatus();
                 } else {
                     showMessage(data.error || '清除失败', 'error');
