@@ -3,7 +3,6 @@
   "buildCommand": "npm install",
   "startCommand": "node server.js",
   "env": {
-    "NODE_VERSION": "18",
-    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
+    "NODE_VERSION": "18"
   }
 }
