@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnyRouter 简易打卡系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 15px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .status-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: transform 0.2s;
+        }
+
+        .status-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .status-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .status-card .value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .login-status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .login-status.logged-in {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .login-status.logged-out {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .login-status.unknown {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .records-table th,
+        .records-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .records-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .status-success {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .status-failed {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .info-box h4 {
+            color: #0056b3;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .info-box ol {
+            margin-left: 20px;
+        }
+
+        .info-box li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 20px;
+            }
+
+            .status-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .btn {
+                margin-right: 10px;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 AnyRouter 简易打卡系统</h1>
+            <p>手动登录一次，自动每日打卡</p>
+        </div>
+
+        <div class="main-content">
+            <!-- 使用说明 -->
+            <div class="info-box">
+                <h4>📋 使用说明</h4>
+                <ol>
+                    <li><strong>点击"打开浏览器登录"</strong> - 系统会打开一个浏览器窗口</li>
+                    <li><strong>手动登录AnyRouter</strong> - 在浏览器中完成GitHub OAuth登录或账号密码登录</li>
+                    <li><strong>自动提取用户信息</strong> - 登录成功后，系统会自动提取并保存您的用户ID和Cookie</li>
+                    <li><strong>保持登录状态</strong> - 登录信息会自动保存，无需重复登录</li>
+                    <li><strong>自动定时打卡</strong> - 每天早上6点自动检查奖励，每两小时也会自动检查一次</li>
+                    <li><strong>手动检查</strong> - 也可随时点击"立即检查"手动获取奖励</li>
+                </ol>
+                <p style="margin-top: 15px; padding: 10px; background: #d4edda; border-left: 4px solid #28a745; color: #155724;">
+                    <strong>✅ 全自动化:</strong> 系统会在您登录后自动提取用户ID，无需手动输入任何信息。
+                </p>
+            </div>
+
+            <!-- 状态面板 -->
+            <div class="status-panel">
+                <div class="status-card">
+                    <h3>📅 今日状态</h3>
+                    <div class="value" id="todayStatus">未检查</div>
+                </div>
+                <div class="status-card">
+                    <h3>💰 当前余额</h3>
+                    <div class="value" id="currentBalance">--</div>
+                </div>
+                <div class="status-card">
+                    <h3>🎁 今日奖励</h3>
+                    <div class="value" id="todayReward">--</div>
+                </div>
+                <div class="status-card">
+                    <h3>🔥 连续天数</h3>
+                    <div class="value" id="streakDays">--</div>
+                </div>
+            </div>
+
+            <!-- 登录状态 -->
+            <div class="login-status unknown" id="loginStatus">
+                🔍 登录状态检查中...
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="card">
+                <h2>🎮 操作面板</h2>
+                <button class="btn" onclick="openForLogin()">🚀 打开浏览器登录</button>
+                <button class="btn" onclick="checkLoginStatus()">🔍 检查登录状态</button>
+                <button class="btn btn-success" onclick="manualCheck()">✅ 立即检查奖励</button>
+                <button class="btn btn-warning" onclick="loadRecords()">📊 刷新记录</button>
+                <button class="btn btn-danger" onclick="closeBrowser()">❌ 关闭浏览器</button>
+            </div>
+
+            <!-- Cookie 管理 -->
+            <div class="card">
+                <h2>🍪 Cookie 管理</h2>
+                <div style="margin-bottom: 15px;">
+                    <button class="btn" onclick="loadCookies()">🔄 加载 Cookie</button>
+                    <button class="btn btn-danger" onclick="clearCookies()">🗑️ 清除 Cookie</button>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; position: relative;">
+                    <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                        <strong>已保存的 Cookie:</strong>
+                        <button class="btn" style="padding: 5px 10px; font-size: 12px;" onclick="toggleCookieVisibility()">
+                            <span id="eyeIcon">👁️</span> <span id="eyeText">显示</span>
+                        </button>
+                        <button class="btn" style="padding: 5px 10px; font-size: 12px;" onclick="copyCookies()">
+                            📋 复制
+                        </button>
+                    </div>
+                    <pre id="cookieDisplay" style="background: white; padding: 10px; border-radius: 5px; margin: 0; word-wrap: break-word; white-space: pre-wrap; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto;">暂无 Cookie</pre>
+                </div>
+            </div>
+
+            <!-- 加载提示 -->
+            <div class="loading" id="loading">
+                <p>⏳ 正在处理，请稍候...</p>
+            </div>
+
+            <!-- 消息显示 -->
+            <div id="messageArea"></div>
+
+            <!-- 检查记录 -->
+            <div class="card">
+                <h2>📈 打卡记录</h2>
+                <table class="records-table" id="recordsTable">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>状态</th>
+                            <th>余额</th>
+                            <th>奖励</th>
+                            <th>消息</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #999;">暂无记录</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRecords();
+            updateTodayStatus();
+            checkLoginStatus();
+            loadCookies(); // 加载 Cookie
+        });
+
+        // Cookie 管理相关
+        let cookiesData = null;
+        let cookiesVisible = false;
+
+        // 加载 Cookie
+        async function loadCookies() {
+            try {
+                const response = await fetch('/api/cookies');
+                const data = await response.json();
+
+                if (data.success) {
+                    cookiesData = data.cookiesString || '';
+                    updateCookieDisplay();
+                }
+            } catch (error) {
+                console.error('加载 Cookie 失败:', error);
+            }
+        }
+
+        // 更新 Cookie 显示
+        function updateCookieDisplay() {
+            const displayElement = document.getElementById('cookieDisplay');
+            if (!cookiesData || cookiesData.length === 0) {
+                displayElement.textContent = '暂无 Cookie';
+                return;
+            }
+
+            if (cookiesVisible) {
+                displayElement.textContent = cookiesData;
+            } else {
+                displayElement.textContent = '●'.repeat(Math.min(cookiesData.length, 100));
+            }
+        }
+
+        // 切换 Cookie 可见性
+        function toggleCookieVisibility() {
+            cookiesVisible = !cookiesVisible;
+            const eyeIcon = document.getElementById('eyeIcon');
+            const eyeText = document.getElementById('eyeText');
+
+            if (cookiesVisible) {
+                eyeIcon.textContent = '🙈';
+                eyeText.textContent = '隐藏';
+            } else {
+                eyeIcon.textContent = '👁️';
+                eyeText.textContent = '显示';
+            }
+
+            updateCookieDisplay();
+        }
+
+        // 复制 Cookie
+        async function copyCookies() {
+            if (!cookiesData || cookiesData.length === 0) {
+                showMessage('没有可复制的 Cookie', 'error');
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(cookiesData);
+                showMessage('Cookie 已复制到剪贴板');
+            } catch (error) {
+                // 如果 clipboard API 不可用，使用传统方法
+                const textarea = document.createElement('textarea');
+                textarea.value = cookiesData;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showMessage('Cookie 已复制到剪贴板');
+                } catch (e) {
+                    showMessage('复制失败', 'error');
+                }
+                document.body.removeChild(textarea);
+            }
+        }
+
+        // 清除 Cookie
+        async function clearCookies() {
+            if (!confirm('确定要清除所有已保存的 Cookie 吗？清除后需要重新登录。')) {
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/clear-cookies', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('Cookie 已清除');
+                    cookiesData = '';
+                    updateCookieDisplay();
+                    checkLoginStatus();
+                } else {
+                    showMessage(data.error || '清除失败', 'error');
+                }
+            } catch (error) {
+                showMessage('网络错误：' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 显示消息
+        function showMessage(message, type = 'success') {
+            const messageArea = document.getElementById('messageArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = message;
+            messageArea.appendChild(messageDiv);
+
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // 显示/隐藏加载状态
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            if (show) {
+                loading.classList.add('show');
+            } else {
+                loading.classList.remove('show');
+            }
+        }
+
+        // 打开浏览器供用户登录
+        async function openForLogin() {
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/init-login', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.cookieExpired) {
+                        showMessage('⚠️ ' + data.message, 'error');
+                        // 自动更新 Cookie 显示和登录状态
+                        cookiesData = '';
+                        updateCookieDisplay();
+                        setTimeout(checkLoginStatus, 1000);
+                    } else if (data.isLoggedIn) {
+                        showMessage('检测到已登录状态！', 'success');
+                        setTimeout(checkLoginStatus, 2000);
+                    } else {
+                        showMessage('浏览器已打开，请在浏览器中登录AnyRouter');
+                        setTimeout(checkLoginStatus, 2000);
+                    }
+                } else {
+                    showMessage(data.error || '打开浏览器失败', 'error');
+                }
+            } catch (error) {
+                showMessage('网络错误：' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 检查登录状态
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/api/login-status');
+                const data = await response.json();
+
+                const statusElement = document.getElementById('loginStatus');
+
+                if (data.success && data.isLoggedIn) {
+                    statusElement.className = 'login-status logged-in';
+                    statusElement.textContent = '✅ 已登录 AnyRouter';
+                    loadCookies(); // 重新加载 Cookie
+                } else if (data.success && !data.isLoggedIn) {
+                    statusElement.className = 'login-status logged-out';
+                    statusElement.textContent = '❌ 未登录，请先登录 AnyRouter';
+                } else {
+                    statusElement.className = 'login-status unknown';
+                    statusElement.textContent = '❓ ' + (data.message || '无法检查登录状态');
+                }
+            } catch (error) {
+                const statusElement = document.getElementById('loginStatus');
+                statusElement.className = 'login-status unknown';
+                statusElement.textContent = '❗ 检查登录状态时出错';
+            }
+        }
+
+        // 手动检查奖励
+        async function manualCheck() {
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/check', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                // 在控制台输出完整的调试信息
+                console.log('=== 立即检查奖励 - 完整响应 ===');
+                console.log('响应状态:', response.status);
+                console.log('完整数据:', data);
+
+                if (data.debug) {
+                    console.log('--- 调试信息 ---');
+                    console.log('sign_in 接口响应:', data.debug.signInResult);
+                    console.log('user/self 接口响应:', data.debug.userInfo);
+                    console.log('提取的 quota:', data.debug.quota);
+                    console.log('计算的余额:', data.debug.calculatedBalance);
+                    console.log('用户ID:', data.debug.savedUserId || data.userId);
+                }
+
+                if (response.ok) {
+                    showMessage(`✅ 检查完成！余额：${data.balance}，奖励：${data.reward}`);
+                    loadRecords();
+                    updateTodayStatus();
+                    checkLoginStatus();
+                } else {
+                    showMessage(data.error || '检查失败', 'error');
+                }
+            } catch (error) {
+                console.error('请求失败:', error);
+                showMessage('网络错误：' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 关闭浏览器
+        async function closeBrowser() {
+            showLoading(true);
+
+            try {
+                const response = await fetch('/api/close', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('浏览器已关闭');
+                    checkLoginStatus();
+                } else {
+                    showMessage(data.error || '关闭失败', 'error');
+                }
+            } catch (error) {
+                showMessage('网络错误：' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 加载检查记录
+        async function loadRecords() {
+            try {
+                const response = await fetch('/api/records');
+                const records = await response.json();
+
+                const tbody = document.getElementById('recordsBody');
+                tbody.innerHTML = '';
+
+                if (records.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #999;">暂无记录</td></tr>';
+                    return;
+                }
+
+                records.forEach(record => {
+                    const row = document.createElement('tr');
+                    const statusClass = record.status === 'success' ? 'status-success' : 'status-failed';
+
+                    row.innerHTML = `
+                        <td>${record.date}</td>
+                        <td class="${statusClass}">${record.status === 'success' ? '成功' : '失败'}</td>
+                        <td>${record.balance || '--'}</td>
+                        <td>${record.reward || '--'}</td>
+                        <td>${record.message || '--'}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // 更新统计信息
+                updateStats(records);
+            } catch (error) {
+                console.error('加载记录失败:', error);
+            }
+        }
+
+        // 更新统计信息
+        function updateStats(records) {
+            if (records.length === 0) return;
+
+            const today = new Date().toISOString().split('T')[0];
+            const todayRecord = records.find(r => r.date === today);
+
+            if (todayRecord) {
+                document.getElementById('currentBalance').textContent = todayRecord.balance || '--';
+                document.getElementById('todayReward').textContent = todayRecord.reward || '--';
+            }
+
+            // 计算连续天数
+            let streak = 0;
+            for (let i = 0; i < records.length; i++) {
+                if (records[i].status === 'success') {
+                    streak++;
+                } else {
+                    break;
+                }
+            }
+            document.getElementById('streakDays').textContent = streak + '天';
+        }
+
+        // 更新今日状态
+        function updateTodayStatus() {
+            const today = new Date().toISOString().split('T')[0];
+            fetch('/api/records')
+                .then(response => response.json())
+                .then(records => {
+                    const todayRecord = records.find(r => r.date === today);
+                    const statusElement = document.getElementById('todayStatus');
+
+                    if (todayRecord) {
+                        statusElement.textContent = todayRecord.status === 'success' ? '✅ 已完成' : '❌ 失败';
+                        statusElement.style.color = todayRecord.status === 'success' ? '#28a745' : '#dc3545';
+                    } else {
+                        statusElement.textContent = '⏳ 待检查';
+                        statusElement.style.color = '#ffc107';
+                    }
+                })
+                .catch(error => {
+                    console.error('更新今日状态失败:', error);
+                });
+        }
+
+        // 定期刷新 - 每5秒检查一次，用于自动检测登录和实时更新记录
+        setInterval(() => {
+            checkLoginStatus();
+            loadCookies(); // 同时刷新Cookie显示
+            loadRecords(); // 实时更新打卡记录
+            updateTodayStatus(); // 更新今日状态
+        }, 5000);
+    </script>
+</body>
+</html>
