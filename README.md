@@ -144,7 +144,7 @@ npm start
 
 ## 使用说明
 
-### 首次使用
+### 本地部署使用
 
 1. **启动服务**: 运行 `npm start` 启动服务器
 2. **打开管理界面**: 访问 http://localhost:3010
@@ -152,6 +152,42 @@ npm start
 4. **手动登录**: 在浏览器中完成 GitHub OAuth 登录或账号密码登录
 5. **自动保存**: 登录成功后,系统自动提取并保存用户 ID 和 Cookie
 6. **完成**: 关闭浏览器或保持打开,系统将自动定时签到
+
+### 云部署使用 (Zeabur/Render 等)
+
+**重要**: 云平台运行在 headless 模式,**无法打开浏览器窗口**。请按以下步骤手动导入 Cookie:
+
+#### 步骤 1: 在浏览器获取 Cookie
+
+1. 在**任意浏览器**中访问 https://anyrouter.top
+2. **登录你的账号**
+3. 登录成功后,按 `F12` 打开**开发者工具**
+4. 进入 **Console(控制台)** 标签
+5. 输入以下命令并回车:
+   ```javascript
+   document.cookie
+   ```
+6. **复制输出的 Cookie 字符串** (格式类似: `session=xxx; other=yyy`)
+
+#### 步骤 2: 导入 Cookie 到云部署实例
+
+1. 访问你的云部署地址 (如 `https://你的应用.zeabur.app`)
+2. 找到页面中的 **"🍪 Cookie 管理"** 部分
+3. 在 **"📥 导入 Cookie"** 区域的文本框中,粘贴刚才复制的 Cookie 字符串
+4. 点击 **"✅ 导入 Cookie"** 按钮
+5. 看到 "✅ 成功导入 X 个 Cookie" 提示即表示成功
+
+#### 步骤 3: 验证并使用
+
+1. 页面会自动检查登录状态,显示 "✅ 已登录 AnyRouter"
+2. 点击 **"✅ 立即检查奖励"** 测试是否能正常签到
+3. 查看 **"📈 打卡记录"** 确认签到成功
+
+#### Cookie 过期处理
+
+Cookie 一般有效期为几天到几周,过期后:
+- 系统会自动检测并提示 "❌ 未登录"
+- 重复上述步骤重新获取并导入 Cookie 即可
 
 ### 后续使用
 
@@ -193,13 +229,16 @@ anyrouter-check/
 
 ## API 接口
 
-- `POST /api/init-login` - 打开浏览器供用户登录
-- `GET /api/login-status` - 检查登录状态
-- `POST /api/check` - 手动执行签到
-- `POST /api/close` - 关闭浏览器
-- `GET /api/records` - 获取签到记录
-- `GET /api/cookies` - 查看已保存的 Cookie
-- `POST /api/clear-cookies` - 清除已保存的 Cookie
+| API | 方法 | 说明 |
+|-----|------|------|
+| `POST /api/init-login` | POST | 打开浏览器供用户登录 (仅本地) |
+| `GET /api/login-status` | GET | 检查登录状态 |
+| `POST /api/check` | POST | 手动执行签到 |
+| `POST /api/close` | POST | 关闭浏览器 (仅本地) |
+| `GET /api/records` | GET | 获取签到记录 |
+| `GET /api/cookies` | GET | 查看已保存的 Cookie |
+| `POST /api/import-cookies` | POST | 导入 Cookie (云部署专用) |
+| `POST /api/clear-cookies` | POST | 清除已保存的 Cookie |
 
 ## 环境变量
 
@@ -249,9 +288,13 @@ anyrouter-check/
 
 ### 4. 云部署上无法打开浏览器
 
-云平台运行在 headless 模式,需要:
-- 在本地先登录一次获取 Cookie
-- 使用 API 导入 Cookie 到云实例
+这是正常的!云平台运行在 headless 模式。
+
+**解决方案**:
+1. 访问 https://anyrouter.top 登录
+2. 按 F12 → Console → 输入 `document.cookie` → 复制输出
+3. 在云部署管理页面的 "🍪 Cookie 管理" → "📥 导入 Cookie" 粘贴并导入
+4. 详见上方[云部署使用说明](#云部署使用-zeaburrender-等)
 
 ### 5. Chrome 浏览器路径错误(本地)
 
@@ -288,6 +331,13 @@ npm run dev
 - 可以在控制台查看详细日志
 
 ## 更新日志
+
+### v1.4.0 (2025-11-10)
+
+- ✅ 添加 Cookie 手动导入功能
+- ✅ 优化云部署体验,支持页面导入 Cookie
+- ✅ 更新使用文档,详细说明云部署步骤
+- ✅ 添加云部署使用提示和指引
 
 ### v1.3.0 (2025-11-10)
 
