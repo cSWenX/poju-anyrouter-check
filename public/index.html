@@ -335,15 +335,30 @@
 
                 <!-- 导入 Cookie -->
                 <div style="background: #e7f3ff; border: 1px solid #b3d7ff; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                    <h3 style="margin: 0 0 10px 0;">📥 导入 Cookie</h3>
-                    <textarea
-                        id="cookieInput"
-                        placeholder="粘贴从浏览器复制的 Cookie 字符串,格式如: session=xxx; other=yyy"
-                        style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; font-size: 12px; resize: vertical;"
-                    ></textarea>
+                    <h3 style="margin: 0 0 10px 0;">📥 导入 Cookie 和用户ID</h3>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">🆔 用户ID (new-api-user):</label>
+                        <input
+                            type="text"
+                            id="userIdInput"
+                            placeholder="输入用户ID，例如: 12345"
+                            style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; font-size: 14px;"
+                        />
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            💡 在 anyrouter.top 登录后，按 F12 → Console，输入 <code>localStorage.getItem('user')</code> 可以找到用户ID
+                        </small>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">🍪 Cookie 字符串:</label>
+                        <textarea
+                            id="cookieInput"
+                            placeholder="粘贴从浏览器复制的 Cookie 字符串,格式如: session=xxx; other=yyy"
+                            style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-family: monospace; font-size: 12px; resize: vertical;"
+                        ></textarea>
+                    </div>
                     <div style="margin-top: 10px;">
-                        <button class="btn btn-success" onclick="importCookies()">✅ 导入 Cookie</button>
-                        <button class="btn" onclick="document.getElementById('cookieInput').value = ''">🗑️ 清空输入</button>
+                        <button class="btn btn-success" onclick="importCookies()">✅ 导入 Cookie 和用户ID</button>
+                        <button class="btn" onclick="clearImportInputs()">🗑️ 清空输入</button>
                     </div>
                 </div>
 
@@ -353,8 +368,12 @@
                     <button class="btn btn-danger" onclick="clearCookies()">🗑️ 清除所有 Cookie</button>
                 </div>
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; position: relative;">
+                    <div style="margin-bottom: 10px;">
+                        <strong>🆔 已保存的用户ID:</strong>
+                        <span id="savedUserIdDisplay" style="margin-left: 10px; font-family: monospace; color: #667eea;">未设置</span>
+                    </div>
                     <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
-                        <strong>已保存的 Cookie:</strong>
+                        <strong>🍪 已保存的 Cookie:</strong>
                         <button class="btn" style="padding: 5px 10px; font-size: 12px;" onclick="toggleCookieVisibility()">
                             <span id="eyeIcon">👁️</span> <span id="eyeText">显示</span>
                         </button>
@@ -409,6 +428,7 @@
         // Cookie 管理相关
         let cookiesData = null;
         let cookiesVisible = false;
+        let savedUserId = null;
 
         // 加载 Cookie
         async function loadCookies() {
@@ -418,10 +438,24 @@
 
                 if (data.success) {
                     cookiesData = data.cookiesString || '';
+                    savedUserId = data.userId || null;
                     updateCookieDisplay();
+                    updateUserIdDisplay();
                 }
             } catch (error) {
                 console.error('加载 Cookie 失败:', error);
+            }
+        }
+
+        // 更新用户ID显示
+        function updateUserIdDisplay() {
+            const userIdElement = document.getElementById('savedUserIdDisplay');
+            if (savedUserId) {
+                userIdElement.textContent = savedUserId;
+                userIdElement.style.color = '#667eea';
+            } else {
+                userIdElement.textContent = '未设置';
+                userIdElement.style.color = '#999';
             }
         }
 
@@ -485,12 +519,24 @@
             }
         }
 
+        // 清空导入输入框
+        function clearImportInputs() {
+            document.getElementById('cookieInput').value = '';
+            document.getElementById('userIdInput').value = '';
+        }
+
         // 导入 Cookie
         async function importCookies() {
             const cookieString = document.getElementById('cookieInput').value.trim();
+            const userId = document.getElementById('userIdInput').value.trim();
 
             if (!cookieString) {
                 showMessage('请输入 Cookie 字符串', 'error');
+                return;
+            }
+
+            if (!userId) {
+                showMessage('请输入用户ID (new-api-user)', 'error');
                 return;
             }
 
@@ -518,6 +564,7 @@
 
                 console.log('准备导入的 Cookie 数量:', cookies.length);
                 console.log('Cookie 数据:', cookies);
+                console.log('用户ID:', userId);
 
                 // 调用导入 API
                 const response = await fetch('/api/import-cookies', {
@@ -526,7 +573,8 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        cookies: cookies
+                        cookies: cookies,
+                        userId: userId
                     })
                 });
 
@@ -537,7 +585,7 @@
 
                 if (response.ok) {
                     showMessage(`✅ ${data.message}`, 'success');
-                    document.getElementById('cookieInput').value = '';
+                    clearImportInputs();
                     // 刷新显示
                     await loadCookies();
                     await checkLoginStatus();
@@ -624,11 +672,22 @@
                         showMessage('⚠️ ' + data.message, 'error');
                         // 自动更新 Cookie 显示和登录状态
                         cookiesData = '';
+                        savedUserId = null;
                         updateCookieDisplay();
+                        updateUserIdDisplay();
                         setTimeout(checkLoginStatus, 1000);
                     } else if (data.isLoggedIn) {
-                        showMessage('检测到已登录状态！', 'success');
-                        setTimeout(checkLoginStatus, 2000);
+                        showMessage('✅ 检测到已登录状态！正在自动获取 Cookie 和用户ID...', 'success');
+                        // 刷新 Cookie 和 userId 显示
+                        await loadCookies();
+                        // 自动填充到输入框
+                        if (savedUserId) {
+                            document.getElementById('userIdInput').value = savedUserId;
+                        }
+                        if (cookiesData) {
+                            document.getElementById('cookieInput').value = cookiesData;
+                        }
+                        setTimeout(checkLoginStatus, 1000);
                     } else {
                         showMessage('浏览器已打开，请在浏览器中登录AnyRouter');
                         setTimeout(checkLoginStatus, 2000);
@@ -671,6 +730,12 @@
 
         // 手动检查奖励
         async function manualCheck() {
+            // 先检查是否有 Cookie 和 userId
+            if (!cookiesData || cookiesData.length === 0 || !savedUserId) {
+                showMessage('❌ 必要信息未获得，无法检查奖励。请先导入 Cookie 和用户ID，或点击"打开浏览器登录"', 'error');
+                return;
+            }
+
             showLoading(true);
 
             try {

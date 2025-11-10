@@ -1150,13 +1150,15 @@ app.get('/api/cookies', async (req, res) => {
             res.json({
                 success: true,
                 cookies: savedData.cookies,
-                cookiesString: savedData.cookies.map(c => `${c.name}=${c.value}`).join('; ')
+                cookiesString: savedData.cookies.map(c => `${c.name}=${c.value}`).join('; '),
+                userId: savedData.userId || null
             });
         } else {
             res.json({
                 success: true,
                 cookies: [],
-                cookiesString: ''
+                cookiesString: '',
+                userId: null
             });
         }
     } catch (error) {
