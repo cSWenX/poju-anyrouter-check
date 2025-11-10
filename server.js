@@ -1176,6 +1176,29 @@ app.post('/api/clear-cookies', async (req, res) => {
     }
 });
 
+// 导入 Cookie (用于云部署)
+app.post('/api/import-cookies', async (req, res) => {
+    try {
+        const { cookies, userId } = req.body;
+
+        if (!cookies || !Array.isArray(cookies)) {
+            res.status(400).json({ error: 'cookies 必须是一个数组' });
+            return;
+        }
+
+        // 保存 Cookie 到数据库
+        await saveCookies(cookies, userId);
+
+        res.json({
+            success: true,
+            message: `成功导入 ${cookies.length} 个 Cookie${userId ? `，用户ID: ${userId}` : ''}`
+        });
+    } catch (error) {
+        console.error('导入 Cookie 失败:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // 辅助函数：检查是否已登录
 async function checkIfLoggedIn(page) {
     try {
