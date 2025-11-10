@@ -36,8 +36,7 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/your-username/anyrouter-check.git
-cd anyrouter-check
+git https://github.com/cSWenX/poju-anyrouter-check.git
 ```
 
 ### 2. 安装依赖
