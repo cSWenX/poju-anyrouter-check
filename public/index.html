@@ -512,8 +512,12 @@
 
                 if (cookies.length === 0) {
                     showMessage('无法解析 Cookie,请检查格式', 'error');
+                    showLoading(false);
                     return;
                 }
+
+                console.log('准备导入的 Cookie 数量:', cookies.length);
+                console.log('Cookie 数据:', cookies);
 
                 // 调用导入 API
                 const response = await fetch('/api/import-cookies', {
@@ -526,7 +530,10 @@
                     })
                 });
 
+                console.log('API 响应状态:', response.status);
+
                 const data = await response.json();
+                console.log('API 响应数据:', data);
 
                 if (response.ok) {
                     showMessage(`✅ ${data.message}`, 'success');
@@ -538,8 +545,11 @@
                     showMessage(data.error || '导入失败', 'error');
                 }
             } catch (error) {
-                console.error('导入 Cookie 失败:', error);
-                showMessage('导入失败: ' + error.message, 'error');
+                console.error('导入 Cookie 详细错误:', error);
+                console.error('错误类型:', error.constructor.name);
+                console.error('错误消息:', error.message);
+                console.error('错误堆栈:', error.stack);
+                showMessage('导入失败: ' + error.message + ' (请检查控制台查看详细错误)', 'error');
             } finally {
                 showLoading(false);
             }
