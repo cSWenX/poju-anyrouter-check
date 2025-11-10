@@ -1091,7 +1091,7 @@ app.get('/api/login-status', async (req, res) => {
             }
         }
 
-        // 方案2: 没有打开的浏览器，检查是否有保存的 Cookie
+        // 方案2: 没有打开的浏览器，通过调用 sign_in 接口验证 Cookie 是否有效
         const savedData = await loadCookies();
 
         if (!savedData || !savedData.cookies || savedData.cookies.length === 0) {
@@ -1103,12 +1103,108 @@ app.get('/api/login-status', async (req, res) => {
             return;
         }
 
-        // 有 Cookie 就认为已登录（因为过期的 Cookie 会在打开浏览器时自动清除）
-        res.json({
-            success: true,
-            isLoggedIn: true,
-            message: '已登录 AnyRouter (Cookie存在)'
-        });
+        // 真正验证 Cookie 是否有效：调用 sign_in 接口
+        try {
+            console.log('通过 sign_in 接口验证 Cookie 有效性...');
+
+            const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
+            const isRender = process.env.RENDER !== undefined;
+            const isZeabur = process.env.ZEABUR !== undefined;
+            const launchOptions = {
+                headless: true,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu'
+                ]
+            };
+
+            if (!isRailway && !isRender && !isZeabur && process.platform === 'darwin') {
+                launchOptions.executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+            } else if (isRender && process.env.PUPPETEER_EXECUTABLE_PATH) {
+                launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+            }
+
+            const tempBrowser = await puppeteer.launch(launchOptions);
+            const tempPage = await tempBrowser.newPage();
+            await tempPage.setViewport({ width: 1280, height: 720 });
+
+            // 设置 Cookie
+            await tempPage.setCookie(...savedData.cookies);
+
+            // 访问页面
+            await tempPage.goto('https://anyrouter.top', {
+                waitUntil: 'networkidle2',
+                timeout: 30000
+            });
+
+            // 获取当前页面的 Cookie
+            const cookies = await tempPage.cookies();
+            const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+
+            // 调用 sign_in 接口验证
+            const signInResult = await tempPage.evaluate(async (cookieStr) => {
+                try {
+                    const response = await fetch('https://anyrouter.top/api/user/sign_in', {
+                        method: 'POST',
+                        headers: {
+                            'accept': 'application/json, text/plain, */*',
+                            'cache-control': 'no-store',
+                            'cookie': cookieStr
+                        }
+                    });
+                    const data = await response.json();
+                    return { success: response.ok, data: data };
+                } catch (error) {
+                    return { success: false, error: error.message };
+                }
+            }, cookieString);
+
+            await tempBrowser.close();
+
+            console.log('sign_in 接口验证结果:', signInResult);
+
+            // 根据 sign_in 接口的响应判断是否已登录
+            if (signInResult.success && signInResult.data) {
+                // 如果返回成功或者返回特定的已签到消息，说明 Cookie 有效
+                const isLoggedIn = signInResult.data.success !== false ||
+                                   (signInResult.data.message && !signInResult.data.message.includes('未登录'));
+
+                if (isLoggedIn) {
+                    res.json({
+                        success: true,
+                        isLoggedIn: true,
+                        message: '已登录 AnyRouter (Cookie有效)'
+                    });
+                } else {
+                    // Cookie 无效，清除
+                    await clearCookies();
+                    res.json({
+                        success: true,
+                        isLoggedIn: false,
+                        message: 'Cookie 已失效，请重新登录'
+                    });
+                }
+            } else {
+                // API 调用失败，Cookie 可能无效
+                await clearCookies();
+                res.json({
+                    success: true,
+                    isLoggedIn: false,
+                    message: 'Cookie 验证失败，请重新登录'
+                });
+            }
+
+        } catch (error) {
+            console.error('验证 Cookie 时出错:', error);
+            // 验证出错，保守处理：认为未登录
+            res.json({
+                success: true,
+                isLoggedIn: false,
+                message: '无法验证登录状态，请重新登录'
+            });
+        }
 
     } catch (error) {
         console.error('检查登录状态失败:', error);
