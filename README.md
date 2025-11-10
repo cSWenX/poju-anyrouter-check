@@ -33,45 +33,70 @@
 
 ## 部署方式
 
-### 方式 1: Railway 部署 (推荐)
+### 方式 1: Render 部署 (推荐 ⭐)
+
+Render 提供免费套餐,支持 Web 服务和持久化存储。
 
 #### 1. 准备工作
 
-- 注册 [Railway](https://railway.app/) 账号
-- 在 GitHub 上 fork 本项目
+- 注册 [Render](https://render.com/) 账号
+- 将项目推送到 GitHub
 
-#### 2. 在 Railway 部署
+#### 2. 在 Render 部署
 
-1. 访问 [Railway Dashboard](https://railway.app/dashboard)
-2. 点击 "New Project" → "Deploy from GitHub repo"
-3. 选择你 fork 的仓库
-4. Railway 会自动检测并部署项目
+1. 访问 [Render Dashboard](https://dashboard.render.com/)
+2. 点击 "New +" → "Web Service"
+3. 连接你的 GitHub 仓库 `cSWenX/poju-anyrouter-check`
+4. 配置如下:
+   - **Name**: anyrouter-check (或自定义名称)
+   - **Region**: Singapore (新加坡,离中国近)
+   - **Branch**: main
+   - **Runtime**: Node
+   - **Build Command**: `npm install`
+   - **Start Command**: `node server.js`
+   - **Instance Type**: Free
 
-#### 3. 配置持久化存储 (重要!)
+#### 3. 添加环境变量
 
-为了保存数据库文件,需要添加 Volume:
+在 "Environment" 部分添加:
+```
+PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+```
 
-1. 在 Railway 项目页面,点击你的服务
-2. 进入 "Settings" → "Variables"
-3. 添加环境变量:
-   ```
-   RAILWAY_VOLUME_MOUNT_PATH=/data
-   ```
-4. 进入 "Settings" → "Volumes"
-5. 点击 "Add Volume"
-6. Mount Path 设置为 `/data`
+#### 4. 配置持久化存储 (重要!)
 
-#### 4. 访问应用
+1. 在服务页面,找到 "Disks" 部分
+2. 点击 "Add Disk"
+3. 配置:
+   - **Name**: data
+   - **Mount Path**: `/data`
+   - **Size**: 1 GB (免费套餐)
 
-部署完成后:
-1. 在 Railway 项目中找到生成的 URL (如 `your-app.railway.app`)
-2. 访问该 URL 即可使用
+#### 5. 添加构建脚本
 
-**注意**: Railway 上运行的是 headless 模式,无法打开浏览器窗口。你需要:
-- 先在本地运行一次,完成登录并生成 Cookie
-- 或者使用 API 方式直接设置 Cookie
+在 "Settings" → "Build Command" 修改为:
+```bash
+chmod +x install-chromium.sh && ./install-chromium.sh && npm install
+```
 
-### 方式 2: 本地部署
+#### 6. 部署
+
+点击 "Create Web Service",Render 会自动构建并部署。
+
+#### 7. 访问应用
+
+部署完成后,访问 Render 提供的 URL (如 `https://anyrouter-check.onrender.com`)。
+
+**注意**:
+- Render 免费套餐在无活动 15 分钟后会休眠,首次访问需要等待启动
+- 运行在 headless 模式,需要在本地先获取 Cookie 后使用 API 导入
+
+### 方式 2: Railway 部署
+
+**注意**: Railway 免费套餐已取消,现在需要付费才能部署 Web 服务。
+
+### 方式 3: 本地部署
 
 #### 1. 克隆项目
 
@@ -123,8 +148,10 @@ npm start
 anyrouter-check/
 ├── server.js              # 主服务器文件
 ├── package.json           # 项目配置文件
-├── railway.json           # Railway 部署配置
+├── render.yaml            # Render 部署配置
+├── railway.json           # Railway 部署配置 (已停止支持免费套餐)
 ├── nixpacks.toml          # Nixpacks 构建配置
+├── install-chromium.sh    # Chromium 安装脚本 (Render 用)
 ├── anyrouter.db          # SQLite 数据库(自动生成)
 ├── public/
 │   └── index.html        # 前端管理界面
@@ -152,11 +179,14 @@ anyrouter-check/
 
 ## 环境变量
 
-| 变量名 | 说明 | 默认值 |
-|--------|------|--------|
-| `PORT` | 服务端口 | 3010 |
-| `RAILWAY_ENVIRONMENT` | Railway 环境标识 | - |
-| `RAILWAY_VOLUME_MOUNT_PATH` | 持久化存储路径 | - |
+| 变量名 | 说明 | 默认值 | 平台 |
+|--------|------|--------|------|
+| `PORT` | 服务端口 | 3010 | 所有 |
+| `RAILWAY_ENVIRONMENT` | Railway 环境标识 | - | Railway |
+| `RAILWAY_VOLUME_MOUNT_PATH` | Railway 持久化存储路径 | - | Railway |
+| `RENDER` | Render 环境标识 | - | Render |
+| `RENDER_EXTERNAL_DISK` | Render 持久化存储路径 | - | Render |
+| `PUPPETEER_EXECUTABLE_PATH` | Chromium 路径 | - | Render |
 
 ## 注意事项
 
@@ -165,34 +195,50 @@ anyrouter-check/
 1. 本项目仅供学习交流使用
 2. 请勿用于任何非法用途
 3. **本地使用**时需要安装 Google Chrome 浏览器
-4. **Railway 部署**时会自动使用 Chromium (headless 模式)
+4. **Render/Railway 部署**时会自动使用 Chromium (headless 模式)
 5. macOS 本地开发时 Chrome 路径已自动配置
-6. Railway 上需要配置 Volume 来持久化数据库
+6. 云部署需要配置 Disk/Volume 来持久化数据库
 
 ## 常见问题
 
-### 1. Railway 部署后数据丢失
+### 1. Render 部署后数据丢失
 
-确保已添加 Volume 并设置 `RAILWAY_VOLUME_MOUNT_PATH=/data` 环境变量。
+确保已添加 Disk 并设置 Mount Path 为 `/data`。
 
-### 2. Railway 上无法打开浏览器
+### 2. Render 上 Chromium 启动失败
 
-Railway 运行在 headless 模式,需要:
+确保在环境变量中设置了:
+- `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true`
+- `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser`
+
+并且 Build Command 包含 `./install-chromium.sh` 脚本。
+
+### 3. Render 免费套餐休眠
+
+Render 免费套餐在无活动 15 分钟后会休眠,首次访问需要等待 30-60 秒启动。可以使用 UptimeRobot 等服务定期 ping 你的应用保持活跃。
+
+### 4. Railway 提示账户受限
+
+Railway 已取消免费套餐,现在需要付费才能部署 Web 服务。建议使用 Render 替代。
+
+### 5. 云部署上无法打开浏览器
+
+云平台运行在 headless 模式,需要:
 - 在本地先登录一次获取 Cookie
-- 使用 API 导入 Cookie 到 Railway 实例
+- 使用 API 导入 Cookie 到云实例
 
-### 3. Chrome 浏览器路径错误(本地)
+### 6. Chrome 浏览器路径错误(本地)
 
 代码已自动检测环境,本地 macOS 会使用标准路径,其他系统 Puppeteer 会使用自带的 Chromium。
 
-### 4. 端口被占用
+### 7. 端口被占用
 
-Railway 会自动分配端口。本地使用时,可以设置环境变量:
+云平台会自动分配端口。本地使用时,可以设置环境变量:
 ```bash
 PORT=8080 npm start
 ```
 
-### 5. Cookie 过期
+### 8. Cookie 过期
 
 Cookie 过期后,系统会自动检测并提醒。只需:
 1. 点击"打开浏览器登录"
@@ -216,6 +262,13 @@ npm run dev
 - 可以在控制台查看详细日志
 
 ## 更新日志
+
+### v1.2.0 (2025-11-10)
+
+- ✅ 添加 Render 部署支持 (推荐)
+- ✅ 创建 Chromium 安装脚本
+- ✅ 更新环境检测支持多平台
+- ✅ 优化部署文档
 
 ### v1.1.0 (2025-11-10)
 

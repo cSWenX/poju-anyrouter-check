@@ -15,6 +15,8 @@ app.use(express.static('public'));
 // 数据库初始化 - 使用持久化存储路径
 const dbPath = process.env.RAILWAY_VOLUME_MOUNT_PATH
     ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'anyrouter.db')
+    : process.env.RENDER_EXTERNAL_DISK
+    ? path.join(process.env.RENDER_EXTERNAL_DISK, 'anyrouter.db')
     : 'anyrouter.db';
 console.log('数据库路径:', dbPath);
 const db = new sqlite3.Database(dbPath);
@@ -285,10 +287,12 @@ class AnyRouterBot {
     async init() {
         // 检测运行环境
         const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
-        const isDevelopment = !isRailway;
+        const isRender = process.env.RENDER !== undefined;
+        const isProduction = isRailway || isRender;
+        const isDevelopment = !isProduction;
 
         const launchOptions = {
-            headless: isRailway ? true : false, // Railway 上必须使用 headless
+            headless: isProduction ? true : false, // 生产环境使用 headless
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -302,6 +306,10 @@ class AnyRouterBot {
         // 只在本地开发时指定 Chrome 路径
         if (isDevelopment && process.platform === 'darwin') {
             launchOptions.executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+        }
+        // Render 环境使用系统 Chromium
+        else if (isRender && process.env.PUPPETEER_EXECUTABLE_PATH) {
+            launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
         }
 
         console.log('Puppeteer 启动配置:', JSON.stringify(launchOptions, null, 2));
@@ -716,6 +724,7 @@ app.post('/api/check', async (req, res) => {
             try {
                 // 创建临时 headless 浏览器实例用于调用 API
                 const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
+                const isRender = process.env.RENDER !== undefined;
                 const launchOptions = {
                     headless: true,  // 使用 headless 模式
                     args: [
@@ -727,8 +736,12 @@ app.post('/api/check', async (req, res) => {
                 };
 
                 // 只在本地 macOS 开发时指定 Chrome 路径
-                if (!isRailway && process.platform === 'darwin') {
+                if (!isRailway && !isRender && process.platform === 'darwin') {
                     launchOptions.executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+                }
+                // Render 环境使用系统 Chromium
+                else if (isRender && process.env.PUPPETEER_EXECUTABLE_PATH) {
+                    launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
                 }
 
                 const tempBrowser = await puppeteer.launch(launchOptions);
@@ -1301,6 +1314,7 @@ async function executeAutoCheck() {
             try {
                 // 创建临时 headless 浏览器实例用于调用 API
                 const isRailway = process.env.RAILWAY_ENVIRONMENT !== undefined;
+                const isRender = process.env.RENDER !== undefined;
                 const launchOptions = {
                     headless: true,
                     args: [
@@ -1312,8 +1326,12 @@ async function executeAutoCheck() {
                 };
 
                 // 只在本地 macOS 开发时指定 Chrome 路径
-                if (!isRailway && process.platform === 'darwin') {
+                if (!isRailway && !isRender && process.platform === 'darwin') {
                     launchOptions.executablePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+                }
+                // Render 环境使用系统 Chromium
+                else if (isRender && process.env.PUPPETEER_EXECUTABLE_PATH) {
+                    launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
                 }
 
                 const tempBrowser = await puppeteer.launch(launchOptions);
